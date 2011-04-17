@@ -1,0 +1,3 @@
+*.beam
+calc_scanner.erl
+calc_parser.erl
