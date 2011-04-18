@@ -1,0 +1,18 @@
+
+let x = 5 + 5 * 4
+print x
+
+def sum(a,b)
+	print a + b
+end
+
+print 5
+
+sum 4, 5
+
+def what()
+	print 12345
+end
+
+what()
+

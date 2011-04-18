@@ -1,0 +1,8 @@
+
+def hello(a)
+	return 100 + a
+end
+
+let x = hello 22
+
+print x
