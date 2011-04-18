@@ -1,5 +1,6 @@
 
 all: calc_scanner.beam calc_parser.beam
+	erl -make
 
 calc_scanner.beam: calc_scanner.xrl
 	escript build.erl scanner $<
