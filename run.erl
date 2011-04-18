@@ -11,11 +11,11 @@ read(Name) when is_atom(Name) ->
 
 tokens(Name) ->
 	File = read(Name),
-	{ok, Tokens, _} = calc_scanner:string(File),
+	{ok, Tokens, _} = scanner:string(File),
 	Tokens.
 
 tree(Name) ->
-	{ok, Tree} = calc_parser:parse(tokens(Name)),
+	{ok, Tree} = parser:parse(tokens(Name)),
 	Tree.
 
 file(Name) ->
