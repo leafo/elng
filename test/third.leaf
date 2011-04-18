@@ -1,0 +1,24 @@
+
+let x = 100
+
+if x <= 100 then
+	print x
+end
+
+if x == 200 then
+	print x + 10
+else
+	print x + 200
+end
+
+def what(a)
+	if a == 1 then 
+		12
+	else
+		14
+	end
+end
+
+print what 1
+print what 2
+

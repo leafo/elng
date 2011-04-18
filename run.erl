@@ -21,6 +21,11 @@ tree(Name) ->
 file(Name) ->
 	block(tree(Name)).
 
+string(Code) ->
+	{ok, Tokens, _} = scanner:string(Code),
+	{ok, Tree} = parser:parse(Tokens),
+	block(Tree).
+
 prepare_env() ->
 	Env = env:new(),
 	env:set("print", {native_func, native, print}, Env),
@@ -40,6 +45,9 @@ zip_set(_, [], Env) -> Env;
 zip_set([Name|Names], [Value|Values], Env) ->
 	env:set(Name, Value, Env),
 	zip_set(Names, Values, Env).
+
+bool(true) -> 1;
+bool(_) -> 0.
 
 call(Name, Args, Env) ->
 	case env:get(Name, Env) of
@@ -70,6 +78,16 @@ stm({funcall, Id, Args}, Env) ->
 stm({return, Exp}, Env) -> throw({return, eval(Exp, Env)});
 stm({return}, _) -> throw({return});
 
+
+stm({'if', Cond, Code, ElseCode}, Env) ->
+	case eval(Cond, Env) of
+		0 -> case ElseCode of
+				none -> ok;
+				_ -> block(ElseCode, Env)
+			end;
+		_ -> block(Code, Env)
+	end;
+
 stm(Other, Env) -> {return, eval(Other, Env)}.
 
 % evaluate expression, expected to return value or error
@@ -83,6 +101,14 @@ eval({add, L, R}, Env) -> eval(L, Env) + eval(R, Env);
 eval({sub, L, R}, Env) -> eval(L, Env) - eval(R, Env);
 eval({mul, L, R}, Env) -> eval(L, Env) * eval(R, Env);
 eval({'div', L, R}, Env) -> eval(L, Env) div eval(R, Env);
+
+eval({lt, L, R}, Env) -> bool(eval(L, Env) < eval(R, Env));
+eval({gt, L, R}, Env) -> bool(eval(L, Env) > eval(R, Env));
+eval({lte, L, R}, Env) -> bool(eval(L, Env) =< eval(R, Env));
+eval({gte, L, R}, Env) -> bool(eval(L, Env) >= eval(R, Env));
+eval({eq, L, R}, Env) -> bool(eval(L, Env) == eval(R, Env));
+eval({neq, L, R}, Env) -> bool(eval(L, Env) /= eval(R, Env));
+
 eval({deref, Id}, Env) -> 
 	case env:get(Id, Env) of
 		{ok, Value} -> Value;

@@ -1,7 +1,7 @@
 Definitions.
 
 D = [0-9]
-SYM = \+|-|\*|/|\(|\)|=|,|;
+SYM = \+|-|\*|/|\(|\)|!=|==|=|,|;|<=|>=|<|>
 ATOM = [a-z][0-9a-zA-Z_]*
 
 Rules.
@@ -23,4 +23,7 @@ r('let') -> true;
 r('def') -> true;
 r('end') -> true;
 r('return') -> true;
+r('if') -> true;
+r('then') -> true;
+r('else') -> true;
 r(_) -> false.
