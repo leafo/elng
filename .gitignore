@@ -1,3 +1,4 @@
 *.beam
-calc_scanner.erl
-calc_parser.erl
+/*.leaf
+scanner.erl
+parser.erl

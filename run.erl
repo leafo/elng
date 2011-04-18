@@ -46,7 +46,7 @@ call(Name, Args, Env) ->
 		{ok, {native_func, Module, Func}} -> {ok, apply(Module, Func, Args)};
 		{ok, {func, ArgNames, Code}} ->
 			FuncEnv = zip_set(ArgNames, [eval(A, Env) || A <- Args], env:new(Env)),
-			{ok, block(Code, FuncEnv)};
+			{ok, catch block(Code, FuncEnv)};
 		_ -> error
 	end.
 
@@ -54,18 +54,30 @@ call(Name, Args, Env) ->
 stm({'let', Id, Exp}, Env) ->
 	Val = eval(Exp, Env),
 	env:set(Id, Val, Env),
-	Val;
+	{return, Val};
 
 stm({fundef, Id, ArgNames, Code}, Env) ->
-	env:set(Id, {func, ArgNames, Code}, Env);
+	env:set(Id, {func, ArgNames, Code}, Env),
+	ok;
 
 stm({funcall, Id, Args}, Env) ->
-	% eval the args
 	EvalArgs = [eval(A, Env) || A <- Args],
 	case call(Id, EvalArgs, Env) of
 		{ok, Value} -> Value;
 		error -> io:format("Failed to call function ~p~n", [Id]), error
-	end.
+	end;
+
+stm({return, Exp}, Env) -> throw({return, eval(Exp, Env)});
+stm({return}, _) -> throw({return});
+
+stm(Other, Env) -> {return, eval(Other, Env)}.
+
+% evaluate expression, expected to return value or error
+eval(FunCall, Env) when element(1, FunCall) == funcall ->
+	case stm(FunCall, Env) of
+		{return, Value} -> Value;
+		_ -> io:format("Expecting return value from function~n", []), error
+	end;
 
 eval({add, L, R}, Env) -> eval(L, Env) + eval(R, Env);
 eval({sub, L, R}, Env) -> eval(L, Env) - eval(R, Env);

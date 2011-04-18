@@ -22,4 +22,5 @@ Erlang code.
 r('let') -> true;
 r('def') -> true;
 r('end') -> true;
+r('return') -> true;
 r(_) -> false.
