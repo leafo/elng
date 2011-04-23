@@ -15,7 +15,7 @@ Rules.
 						_ -> {id, TokenLine, TokenChars}
 					end}.
 \n			: {token, {eol, TokenLine}}.
-\s|\t|		: skip_token.
+\s|\t		: skip_token.
 
 Erlang code.
 
@@ -26,4 +26,7 @@ r('return') -> true;
 r('if') -> true;
 r('then') -> true;
 r('else') -> true;
+r('for') -> true;
+r('do') -> true;
+r('while') -> true;
 r(_) -> false.

@@ -1,7 +1,7 @@
 
-Nonterminals lines stm exp e arg_list arg_def_list funcall.
+Nonterminals lines stm exp e arg_list arg_def_list funcall let_list.
 Terminals '+' '-' '*' '/' '(' ')' '=' ',' ';' '<' '>' '>=' '<=' '!=' '=='
-	eol int id 'let' 'end' def return 'if' then else.
+	eol int id 'let' 'end' def return 'if' then else for do while.
 
 Rootsymbol lines.
 
@@ -20,13 +20,22 @@ lines -> e : [].
 e -> eol.
 e -> ';'.
 
-stm -> 'let' id '=' exp : {'let', v('$2'), '$4'}.
+let_list -> id '=' exp : [{v('$1'), '$3'}].
+let_list -> id '=' exp ',' let_list : [{v('$1'), '$3'} | '$5'].
+let_list -> id '=' exp ',' eol let_list : [{v('$1'), '$3'} | '$6'].
+
+stm -> 'let' let_list : {'let', '$2'}.
+
 stm -> 'def' id '(' arg_def_list ')' lines 'end' : {fundef, v('$2'), '$4', '$6'}.
 
 stm -> exp : '$1'.
 
 stm -> 'if' exp then lines end : {'if', '$2', '$4', none}.
 stm -> 'if' exp then lines else lines end : {'if', '$2', '$4', '$6'}.
+
+stm -> for id '=' exp ',' exp do lines end : {for, v('$2'), '$4', '$6', '$8'}.
+
+stm -> while exp do lines end : {while, '$2', '$4'}.
 
 stm-> return : {return}.
 stm-> return exp : {return, '$2'}.
@@ -47,6 +56,8 @@ exp -> '(' exp ')' : '$2'.
 exp -> int : v('$1').
 exp -> id : {deref, v('$1')}.
 exp -> funcall : '$1'.
+
+exp -> id '=' exp : {assign, v('$1'), '$3'}.
 
 funcall -> id arg_list : {funcall, v('$1'), '$2'}.
 funcall -> id '(' arg_list ')' : {funcall, v('$1'), '$3'}.

@@ -26,6 +26,11 @@ string(Code) ->
 	{ok, Tree} = parser:parse(Tokens),
 	block(Tree).
 
+
+%%
+%% Interpreter
+%%
+
 prepare_env() ->
 	Env = env:new(),
 	env:set("print", {native_func, native, print}, Env),
@@ -58,11 +63,30 @@ call(Name, Args, Env) ->
 		_ -> error
 	end.
 
+for_loop(Id, Value, End, Inc, Code, Env) ->
+	InnerEnv = env:new(Env),
+	V = eval(Value, Env),
+	env:set(Id, V, InnerEnv),
+	Ret = block(Code, InnerEnv),
+	if 
+		V== End -> Ret;
+		true -> for_loop(Id, V+Inc, End, Inc, Code, Env)
+	end.
+
+declare_list([{Id, Exp} | Rest], Env) ->
+	Val = eval(Exp, Env),
+	env:set(Id, Val, Env),
+	declare_list(Rest, Env);
+declare_list([], _) -> ok.
+
 % run a statement
 stm({'let', Id, Exp}, Env) ->
 	Val = eval(Exp, Env),
 	env:set(Id, Val, Env),
 	{return, Val};
+
+stm({'let', LetList}, Env) ->
+	declare_list(LetList, Env);
 
 stm({fundef, Id, ArgNames, Code}, Env) ->
 	env:set(Id, {func, ArgNames, Code}, Env),
@@ -78,7 +102,6 @@ stm({funcall, Id, Args}, Env) ->
 stm({return, Exp}, Env) -> throw({return, eval(Exp, Env)});
 stm({return}, _) -> throw({return});
 
-
 stm({'if', Cond, Code, ElseCode}, Env) ->
 	case eval(Cond, Env) of
 		0 -> case ElseCode of
@@ -88,6 +111,19 @@ stm({'if', Cond, Code, ElseCode}, Env) ->
 		_ -> block(Code, Env)
 	end;
 
+stm({'for', Id, Min, Max, Code}, Env) ->
+	Inc = if Min < Max -> 1; true -> -1 end,
+	for_loop(Id, Min, Max, Inc, Code, Env);
+
+stm({'while', Cond, Code}, Env) ->
+	V = eval(Cond, Env),
+	case V of
+		1 ->
+			block(Code, Env),
+			stm({while, Cond, Code}, Env);
+		_ -> ok
+	end;
+
 stm(Other, Env) -> {return, eval(Other, Env)}.
 
 % evaluate expression, expected to return value or error
@@ -95,6 +131,13 @@ eval(FunCall, Env) when element(1, FunCall) == funcall ->
 	case stm(FunCall, Env) of
 		{return, Value} -> Value;
 		_ -> io:format("Expecting return value from function~n", []), error
+	end;
+
+eval({assign, Name, Exp}, Env) ->
+	Val = eval(Exp, Env),
+	case env:update(Name, Val, Env) of
+		ok -> Val;
+		_ -> io:format("Failed to set variable ~p~n", [Name]), error
 	end;
 
 eval({add, L, R}, Env) -> eval(L, Env) + eval(R, Env);
