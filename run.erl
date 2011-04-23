@@ -56,7 +56,7 @@ bool(_) -> 0.
 
 call(Name, Args, Env) ->
 	case env:get(Name, Env) of
-		{ok, {native_func, Module, Func}} -> {ok, apply(Module, Func, Args)};
+		{ok, {native_func, Module, Func}} -> {ok, apply(Module, Func, [Args])};
 		{ok, {func, ArgNames, Code}} ->
 			FuncEnv = zip_set(ArgNames, [eval(A, Env) || A <- Args], env:new(Env)),
 			{ok, catch block(Code, FuncEnv)};
